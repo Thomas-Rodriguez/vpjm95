@@ -9,19 +9,32 @@
 ![tinkercad_parte_1](https://github.com/vpjm95/vpjm95/assets/57650096/d94ee336-5bd7-4b9d-b31b-b03c01de114f)
  
 ### Descripcion 
-- una placa arduina conectado a dos display de siete segmentos que es controlado por tres botones, uno permite aumentar el contador de a un digito del 0 al 99
-  el segundo al presionarlo disminuye el conteo y el tercero reinicia el display.
+- Una placa arduina conectada a dos display de siete segmentos con un controlado proporcionado por tres botones, uno permite aumentar el
+- contador de a un digito desde el comienzo 0 al 99, el segundo botón al presionarlo disminuye el conteo
+- y el tercero reinicia el display en 0.
 
   
-## proyecto : contador Display 7 segmentos parte 2 
+## Proyecto : contador Display 7 segmentos parte 2 
 ![tinkercad](https://github.com/vpjm95/vpjm95/assets/57650096/80ce0063-34c6-471e-a25c-2c24da466afa)
 
 ### Descripcion 
+- Una placa arduina conectada a dos display de siete segmentos y a dos botones , un interruptor deslizante (Switch) de dos posiciones dependiendo de la posicion del interruptor podemos mostrar un contador del 0 al 99 o numeros primos del 0 al 99. Se le agrego un motor de aficionado que puede convertir la energia electrica en energia mecanica dando uso de muchas maneras.
 
-- Una placa arduina conectada a dos display de siete segmentos y a dos botones , un interruptor deslizante (switch ) de dos posiciones dependiendo de la posicion del interruptor podemos mostrar un contador del 0 al 99 o numeros primos del 0 al 99. y agregamos un motor de aficionado este puede convertir la energia electrica en energia mecanica dando uso de muchas maneras.
+
+## proyecto : contador Display 7 segmentos parte 3
+![tinkercad](https://www.tinkercad.com/things/j2kVWHwrckG?sharecode=eOV5h3cOzCYViNqg67MDt4uvCg5nmy-PBeKpZAME9Oc)
+
+### Descripcion
+- Una placa arduina conectada a dos display de siete segmentos y a dos botones , un interruptor deslizante (Switch) de dos posiciones, un motor de aficionado y un sensor de
+- luz ambiental que se basa en la luz como el mecanismo de control de compuerta y regulador de corriente, dando pie a el manejo de un LED o Lampara o, en este caso, los
+- displays de 7 segmentos
+
+
 
  ## Función principal 
- A 10 ,B 11, C 5 , D 6 ,E 7 ,G 8, F 9 , UNIDAD A4, DECENA A5, OFF 0, SUM_BUTTON 4,SUBS_BUTTON 3 ,RESET_BUTTON 2 , SWITCH 2: son  #define que utilizamos para agregar los leds, asociandolo a pines de la placa arduino.
+ 'A 10', 'B 11', 'C 5', 'D 6', 'E 7', 'G 8', 'F 9', 'UNIDAD A4', 'DECENA A5', 'OFF 0', 'SUM_BUTTON 4', 'SUBS_BUTTON 3', 'RESET_BUTTON 2', 'SWITCH 2': 
+ son #define que utilizamos para agregar los leds, asociandolo a pines de la placa arduino. Se le agregaron despues 'POSITIVE 12', 'NEGATIVE 13' 
+ para operar el motor; 'SWITCH 2' para el interruptor deslizante; y TIMEDELAY 50, SWITCHDELAY 50 para establecer bases de LOW/HIGH o para los delays.
  ~~~ C
  void setup()
 {
@@ -35,15 +48,19 @@
   pinMode(UNIDAD, OUTPUT);
   pinMode(DECENA, OUTPUT);
   
-  pinMode(12, OUTPUT);
-  pinMode(13, OUTPUT);
+  pinMode(POSITIVE, OUTPUT);
+  pinMode(NEGATIVE, OUTPUT);
   
   digitalWrite(UNIDAD, 0);
   digitalWrite(DECENA, 0);
   showDisplay(0);
 }
+
+int lightSensor = 3;
+int sensorValue;
 ~~~ 
-En la  función void setup :se  inicializa los pines de la placa Arduino para que puedan ser utilizados como entradas o salidas.
+En la  función void setup : Se  inicializa los pines de la placa Arduino para que puedan ser utilizados como entradas o salidas. Tambien inicializamos desde
+afuera las variables 'lightSensor' y 'sensorValue'
 ~~~ C
 int click(void)
   
@@ -74,6 +91,26 @@ int click(void)
 
 {
 ~~~ 
+~~~ C
+void lightOffStart()
+{
+  //Lee el sensor de luz y apaga totalmente el display
+  //DECENA por 3 segundos, despues lo encinede
+  sensorValue = analogRead(lightSensor);
+  
+  if (sensorValue > 1000)
+  {
+  	digitalWrite(DECENA,LOW);
+    delay(3000);
+  }
+  else
+  {
+    digitalWrite(DECENA,HIGH);
+  }
+}
+~~~
+Lee el sensor de luz y apaga totalmente el display 'DECENA' por 3 segundos, despues lo encinede cuando el tiempo se acaba.
+Pero para poder pruducir eso, desabilita todas las otras funciones de sumar, restar, y el interruptor.
 ~~~ C
 void increment()
 {
@@ -115,20 +152,12 @@ bool primeNumbers(int number)
   return true;
 }
 ~~~ 
-  /*Funcion especifica para ver si el boton fue presionado una vez,
-  Que no cuenten por mas si se mantiene presionado,
-  y devuelva el valor BUTTON para la funcion loop()*/
-
+Funcion especifica para ver si el boton fue presionado una vez, que no cuenten por mas si se mantiene presionado,
+y devuelva el valor BUTTON para la funcion loop()
 ~~~ C
 void loop()
 {
-  digitalWrite(13,1);
-  /*Suma, Resta o resetea el valor Nummero que va a mostrar,
-  si pasa de 0 a menos, da la vuelta a 99, y caso contrario
-  quere sumar mas de 99.
-  Al final, llama a la funcion printNumber para calcular
-  su posicion.*/
-
+  lightOffStart();
 
   int Switch = digitalRead(SWITCH);
 
@@ -157,7 +186,13 @@ void loop()
     printNumber(number);
   }
 }
-
+~~~
+ Suma, Resta o resetea el valor 'Numbero' que va a mostrar, si pasa de 0 a menos, da la vuelta a 99, y caso contrario
+ quere sumar mas de 99. Caso contrario, Se bscara el numero Primo más cercano, del 0 hasta el 99.
+ Si el botón 'SUM_BUTTON' es pulsado, el Motor de principante se encendera y girar en sentido positivo. Caso en el que se presione
+ el botón 'SUBS_BUTTON', girara en sentido contrario. Al final, llama a la funcion printNumber para calcular su posicion.
+ Dependiento el estado de 'Switch' (interruptor), se ejecutara una funcion o la otra. Problema, deja de leerme 
+ la mayor parte de suma y resta del numero en todo el codigo y apaga un display por completo.
 ~~~ C
 void turnDigit(int digit)
 {
@@ -195,16 +230,14 @@ void printNumber(int number)
   turnDigit(OFF);
   showDisplay(number - 10*((int)number / 10));
   /* Esta cuenta da la unidad y decimal.
-EJ, si number es 23, hacemos 23/10, da 2,3 -> que se convierte en 2.
-El 2 se multiplica por 10, dando el Decimal: 2 Finalmente, se resta 23(number)
-menos el resultado 20, dando la Unidad: 3*/
+  EJ, si number es 23, hacemos 23/10, da 2,3 -> que se convierte en 2.
+  El 2 se multiplica por 10, dando el Decimal: 2 Finalmente, se resta 23(number)
+  menos el resultado 20, dando la Unidad: 3*/
   turnDigit(DECENA);
   //Llama a la funcion para ver que caso encender la decena
 }
-
-
+~~~
 ~~~ C
-
 void showDisplay(int number)
 {
   //Enciende los displays entre unidad y decimal
@@ -285,7 +318,6 @@ void showDisplay(int number)
 }  
 ~~~ 
 ~~~ C
-  
 void turnOffDisplay()
 {
   //Apaga los displays que no estan en uso para que no quede residuo
@@ -302,30 +334,15 @@ void turnOffDisplay()
 Parte 1 
 https://www.tinkercad.com/things/ilaSsHgMmkz-bodacious-habbi-densor/editel
 
-parte 2 
-  https://www.tinkercad.com/things/iQh2glDjtYk?sharecode=0d5E5kLgmVP71zSz8f1w6UXAddd7WWGimW6Ec6a1AXQ
+Parte 2 
+https://www.tinkercad.com/things/iQh2glDjtYk?sharecode=0d5E5kLgmVP71zSz8f1w6UXAddd7WWGimW6Ec6a1AXQ
+
+Parte 3
+https://www.tinkercad.com/things/j2kVWHwrckG?sharecode=eOV5h3cOzCYViNqg67MDt4uvCg5nmy-PBeKpZAME9Oc
+
 ## link al video del proceso 
-  https://youtu.be/srCOkz9Xgco?si=So-sDlO4tI2P2_uc
-  
+https://youtu.be/_Ry7mtURGDE?si=ZDhBp9wkXyGSP3fr
 
-  
+https://youtu.be/srCOkz9Xgco?si=So-sDlO4tI2P2_uc
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+https://youtu.be/kv6r6HzJDqw?si=nqbP97TKXTUznksV
