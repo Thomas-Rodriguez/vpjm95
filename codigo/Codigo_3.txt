@@ -1,0 +1,305 @@
+#define A 10
+#define B 11
+#define C 5
+#define D 6
+#define E 7
+#define G 8
+#define F 9
+#define UNIDAD A4
+#define DECENA A5
+
+#define POSITIVE 12
+#define NEGATIVE 13
+
+#define OFF 0
+
+#define TIMEDELAY 50
+#define SWITCHDELAY 50
+
+#define SUM_BUTTON 4
+#define SUBS_BUTTON 3
+
+#define SWITCH 2
+
+void setup()
+{
+  //Inicia los 7 Leds del display
+  for (int i = 5; i <= 11; i++)
+    pinMode(i, OUTPUT);
+  //Los botones
+  pinMode(SUM_BUTTON, INPUT_PULLUP);
+  pinMode(SUBS_BUTTON, INPUT_PULLUP);
+
+  //El interruptor deslizante
+  pinMode(SWITCH, INPUT_PULLUP);
+  
+  pinMode(UNIDAD, OUTPUT);
+  pinMode(DECENA, OUTPUT);
+  
+  //El motor de aprendiz
+  pinMode(POSITIVE, OUTPUT);
+  pinMode(NEGATIVE, OUTPUT);
+  
+  digitalWrite(UNIDAD, 0);
+  digitalWrite(DECENA, 0);
+  showDisplay(0);
+}
+
+int number = 0;
+int previousSum = 1;
+int previousSubs = 1;
+
+int click(void)
+{
+  /*Funcion especifica para ver si el boton fue presionado una vez,
+  Que no cuenten por mas si se mantiene presionado,
+  y devuelva el valor BUTTON para la funcion loop()*/
+  
+  int Sum = digitalRead(SUM_BUTTON);
+  int Substraction = digitalRead(SUBS_BUTTON);
+  
+  if (Sum == 1)
+  {
+    previousSum = 1;
+  }
+  if (Substraction == 1)
+  {
+    previousSubs = 1;
+  }
+  if (Sum == 0 && Sum != previousSum)
+  {
+  	previousSum = Sum;
+    return SUM_BUTTON;
+  }
+  if (Substraction == 0 && Substraction != previousSubs)
+  {
+  	previousSubs = Substraction;
+    return SUBS_BUTTON;
+  }
+  
+  return -1;
+}
+
+void increment()
+{
+  //aumenta el Numero value más uno, si excede los 99, vuelve a 0
+  if (number < 99)
+  {
+    number ++;
+  }
+  else
+  {
+    number = 0;
+  }
+}
+
+void decrease()
+{  
+  //Resta el Numero value menos uno si excede 0, vuelve a 99
+  if (number > 0)
+  {
+    number --;
+  }
+  else
+  {
+    number = 99;
+  }  
+}
+
+bool primeNumbers(int number)
+{
+  //Ejecuta y revisa si el numero o el mas cercano es primo
+  if (number <= 1) 
+  {
+    return false;
+  }
+  for (int i = 2; i * i <= number; i++) 
+  {
+    if (number % i == 0)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+void loop()
+{
+  /*Suma, Resta o resetea el valor Nummero que va a mostrar,
+  si pasa de 0 a menos, da la vuelta a 99, y caso contrario
+  quere sumar mas de 99. Caso contrario, Se bscara el numero Primo
+  más cercano, del 0 hasta el 99.
+  Si el botón SUM_BUTTON es pulsado, el Motor de principante se 
+  encendera y girar en sentido positivo. Caso en el que se presione
+  el botón SUBS_BUTTON, girara en sentido contrario.
+  Al final, llama a la funcion printNumber para calcular
+  su posicion.
+  Dependiento el estado de Switch (interruptor), se ejecutara una
+  funcion o la otra*/
+
+
+  int Switch = digitalRead(SWITCH);
+
+  if (Switch == HIGH) 
+  {
+    int readClick = click();
+    if (readClick == SUM_BUTTON) 
+    {
+      increment();
+      digitalWrite(NEGATIVE, 0);
+      digitalWrite(POSITIVE, 1);
+    } 
+    else if (readClick == SUBS_BUTTON)
+    {
+      decrease();
+      digitalWrite(NEGATIVE, 1);
+      digitalWrite(POSITIVE, 0);
+    }
+
+    printNumber(number);
+  } 
+  else if (Switch == LOW)
+  {
+    if (!primeNumbers(number)) 
+    {
+      do 
+      {
+        number++;
+      } while (!primeNumbers(number));
+    }
+    printNumber(number);
+  }
+}
+
+void turnDigit(int digit)
+{
+  //Seleciona cual UNIDAD o DIGITO va a ser mostrada
+  if (digit == UNIDAD)
+  {
+    digitalWrite(UNIDAD, LOW);
+    digitalWrite(DECENA, HIGH);
+    delay(TIMEDELAY);
+    //delay da tiempo para que sea visible el display
+  }
+  else if (digit == DECENA)
+  {
+    digitalWrite(UNIDAD, HIGH);
+    digitalWrite(DECENA, LOW);
+    delay(TIMEDELAY);
+  }
+  else
+  {
+    //Los apaga a ambos
+    digitalWrite(UNIDAD, HIGH);
+    digitalWrite(DECENA, HIGH);
+  }
+}
+
+void printNumber(int number)
+{
+  //Muestra los dos numeros en el display
+  turnDigit(OFF);
+  //Muestra ambos display para apagarlos
+  showDisplay(number / 10);
+  turnDigit(UNIDAD);
+  //Llama a la funcion para ver que caso encender la unidad
+  turnDigit(OFF);
+  showDisplay(number - 10*((int)number / 10));
+  /* Esta cuenta da la unidad y decimal.
+EJ, si number es 23, hacemos 23/10, da 2,3 -> que se convierte en 2.
+El 2 se multiplica por 10, dando el Decimal: 2 Finalmente, se resta 23(number)
+menos el resultado 20, dando la Unidad: 3*/
+  turnDigit(DECENA);
+  //Llama a la funcion para ver que caso encender la decena
+}
+
+void showDisplay(int number)
+{
+  //Enciende los displays entre unidad y decimal
+  turnOffDisplay();
+  
+	switch(number % 10)
+  {
+    case 0:
+    	digitalWrite(A, LOW);
+    	digitalWrite(B, LOW);
+    	digitalWrite(C, LOW);
+    	digitalWrite(D, LOW);
+    	digitalWrite(E, LOW);
+    	digitalWrite(F, LOW);
+    	break;
+    case 1:
+    	digitalWrite(B, LOW);
+    	digitalWrite(C, LOW);
+    	break;
+    case 2:
+    	digitalWrite(A, LOW);
+    	digitalWrite(B, LOW);
+    	digitalWrite(D, LOW);
+    	digitalWrite(E, LOW);
+    	digitalWrite(G, LOW);
+    	break;
+    case 3:
+    	digitalWrite(A, LOW);
+    	digitalWrite(B, LOW);
+    	digitalWrite(C, LOW);
+    	digitalWrite(D, LOW);
+    	digitalWrite(G, LOW);
+    	break;
+    case 4:
+    	digitalWrite(B, LOW);
+       	digitalWrite(C, LOW);
+       	digitalWrite(F, LOW);
+        digitalWrite(G, LOW);
+    	break;
+    case 5:
+    	digitalWrite(A, LOW);
+        digitalWrite(C, LOW);
+        digitalWrite(D, LOW);
+        digitalWrite(F, LOW);
+        digitalWrite(G, LOW);
+    	break;
+    case 6:
+    	digitalWrite(A, LOW);
+        digitalWrite(C, LOW);
+        digitalWrite(D, LOW);
+    	digitalWrite(E, LOW);
+        digitalWrite(F, LOW);
+        digitalWrite(G, LOW);
+    	break;
+    case 7:
+        digitalWrite(A, LOW);
+    	digitalWrite(B, LOW);
+    	digitalWrite(C, LOW);
+    	break;
+    case 8:
+        digitalWrite(A, LOW);
+    	digitalWrite(B, LOW);
+    	digitalWrite(C, LOW);
+    	digitalWrite(D, LOW);
+    	digitalWrite(E, LOW);
+    	digitalWrite(F, LOW);
+    	digitalWrite(G, LOW);
+    	break;
+    case 9:
+    	digitalWrite(A, LOW);
+    	digitalWrite(B, LOW);
+    	digitalWrite(C, LOW);
+    	digitalWrite(D, LOW);
+    	digitalWrite(F, LOW);
+    	digitalWrite(G, LOW);
+    	break;
+    }
+}  
+  
+void turnOffDisplay()
+{
+  //Apaga los displays que no estan en uso para que no quede residuo
+  digitalWrite(A, HIGH);
+  digitalWrite(B, HIGH);
+  digitalWrite(C, HIGH);
+  digitalWrite(D, HIGH);
+  digitalWrite(E, HIGH);
+  digitalWrite(F, HIGH);
+  digitalWrite(G, HIGH);
+}
